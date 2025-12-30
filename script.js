@@ -9,63 +9,297 @@ class TypingTest {
         this.totalChars = 0;
         this.isActive = false;
         this.mode = 'timer';
-        this.timerDuration = 60;
+        this.timerDuration = 30;
         this.wordsTarget = 50;
         this.timer = null;
         this.remainingTime = this.timerDuration;
         this.wordsTyped = 0;
 
-        this.cursor = null;
-        this.typingCursor = null; 
-        this.cursorX = 0;
-        this.cursorY = 0;
-        this.targetX = 0;
-        this.targetY = 0;
-        this.cursorSpeed = 0.15; 
-        this.cursorVelocityX = 0;
-        this.cursorVelocityY = 0;
-        this.cursorAcceleration = 0.1;
-        this.cursorSmoothness = 0.15;
-
-        this.typingCursorTargetX = 0;
-        this.typingCursorTargetY = 0;
-        this.typingCursorX = 0;
-        this.typingCursorY = 0;
-        this.typingCursorVisible = false;
+        this.typingCursor = null;
 
         this.init();
     }
 
-    init() {
-        this.generateText();
+    async init() {
+        await this.generateText();
         this.setupEventListeners();
         this.updateDisplay();
-        this.initSmoothCursor();
     }
 
-    generateText() {
-        const words = [
-            'the', 'be', 'to', 'of', 'and', 'a', 'in', 'that', 'have', 'I',
-            'it', 'for', 'not', 'on', 'with', 'he', 'as', 'you', 'do', 'at',
-            'this', 'but', 'his', 'by', 'from', 'they', 'we', 'say', 'her', 'she',
-            'or', 'an', 'will', 'my', 'one', 'all', 'would', 'there', 'their', 'what',
-            'so', 'up', 'out', 'if', 'about', 'who', 'get', 'which', 'go', 'me',
-            'when', 'make', 'can', 'like', 'time', 'no', 'just', 'him', 'know', 'take',
-            'people', 'into', 'year', 'your', 'good', 'some', 'could', 'them', 'see', 'other',
-            'than', 'then', 'now', 'look', 'only', 'come', 'its', 'over', 'think', 'also',
-            'back', 'after', 'use', 'two', 'how', 'our', 'work', 'first', 'well', 'way',
-            'even', 'new', 'want', 'because', 'any', 'these', 'give', 'day', 'most', 'us'
-        ];
+    // Load language data with error handling
+    async loadLanguageData(language = 'english') {
+        try {
+            // Determine which file to load based on the target text length
+            let filename = `data/${language}.json`;
+            const targetLength = this.mode === 'words' ? this.wordsTarget : 200;
+
+            // For longer texts, use larger word lists if available
+            if (targetLength > 500) {
+                const largeFiles = [
+                    `data/${language}_450k.json`,
+                    `data/${language}_650k.json`,
+                    `data/${language}_500k.json`,
+                    `data/${language}_250k.json`,
+                    `data/${language}_100k.json`,
+                    `data/${language}_10k.json`
+                ];
+                for (const file of largeFiles) {
+                    try {
+                        const response = await fetch(file);
+                        if (response.ok) {
+                            filename = file;
+                            break;
+                        }
+                    } catch (e) {
+                        continue; // Try next file
+                    }
+                }
+            } else if (targetLength > 100) {
+                const mediumFiles = [
+                    `data/${language}_10k.json`,
+                    `data/${language}_5k.json`,
+                    `data/${language}_2k.json`,
+                    `data/${language}_1k.json`
+                ];
+                for (const file of mediumFiles) {
+                    try {
+                        const response = await fetch(file);
+                        if (response.ok) {
+                            filename = file;
+                            break;
+                        }
+                    } catch (e) {
+                        continue; // Try next file
+                    }
+                }
+            }
+
+            const response = await fetch(filename);
+            if (!response.ok) {
+                throw new Error(`Failed to load language data from ${filename}`);
+            }
+            const data = await response.json();
+            return data.words || [];
+        } catch (error) {
+            console.error('Error loading language data:', error);
+            // Fallback to a simple word list if loading fails
+            return [
+                'the', 'be', 'to', 'of', 'and', 'a', 'in', 'that', 'have', 'I',
+                'it', 'for', 'not', 'on', 'with', 'he', 'as', 'you', 'do', 'at',
+                'this', 'but', 'his', 'by', 'from', 'they', 'we', 'say', 'her', 'she',
+                'or', 'an', 'will', 'my', 'one', 'all', 'would', 'there', 'their', 'what',
+                'so', 'up', 'out', 'if', 'about', 'who', 'get', 'which', 'go', 'me',
+                'when', 'make', 'can', 'like', 'time', 'no', 'just', 'him', 'know', 'take',
+                'people', 'into', 'year', 'your', 'good', 'some', 'could', 'them', 'see', 'other',
+                'than', 'then', 'now', 'look', 'only', 'come', 'its', 'over', 'think', 'also',
+                'back', 'after', 'use', 'two', 'how', 'our', 'work', 'first', 'well', 'way',
+                'even', 'new', 'want', 'because', 'any', 'these', 'give', 'day', 'most', 'us'
+            ];
+        }
+    }
+
+    // Generate text using Zipf's Law for weighted random sampling
+    async generateText() {
+        const words = await this.loadLanguageData('english');
+        if (words.length === 0) {
+            console.error('No words loaded, using fallback');
+            return;
+        }
 
         let generatedText = '';
         const targetLength = this.mode === 'words' ? this.wordsTarget : 200;
 
+        // Initialize recent usage tracker
+        this.recentUsage = new Map();
+
         while (generatedText.split(' ').length < targetLength) {
-            const randomWord = words[Math.floor(Math.random() * words.length)];
+            const randomWord = this.selectWordWithDiversity(words);
             generatedText += randomWord + ' ';
         }
 
         this.text = generatedText.trim();
+    }
+
+    // Create prefix sum array for modified weighted selection
+    createZipfWeightedPrefixSum(n) {
+        // Use a method that reduces the dominance of very frequent words
+        // This creates a more natural distribution with less repetition of words like "the"
+        const weights = [];
+        let sum = 0;
+        const prefixSum = [];
+
+        for (let i = 0; i < n; i++) {
+            // Use linear scaling to make the distribution more even between ranks
+            // This gives more variety while preserving some frequency-based selection
+            const rankFactor = (i + 1);
+            // Use a linear combination to reduce dominance of top words
+            const weight = 1.0 / (1 + 0.1 * rankFactor);  // This creates a more even distribution
+            weights.push(weight);
+            sum += weight;
+            prefixSum.push(sum);
+        }
+
+        return prefixSum;
+    }
+
+    // Select a word using weighted random sampling based on Zipf's Law with diversity
+    selectWordZipfWeightedWithDiversity(words, prefixSum, recentWords) {
+        // Generate a random value between 0 and the total sum
+        const totalWeight = prefixSum[prefixSum.length - 1];
+        const randomValue = Math.random() * totalWeight;
+
+        // Binary search to find the position where randomValue fits in prefixSum
+        let left = 0;
+        let right = prefixSum.length - 1;
+        let index = 0;
+
+        while (left <= right) {
+            const mid = Math.floor((left + right) / 2);
+            if (prefixSum[mid] >= randomValue) {
+                index = mid;
+                right = mid - 1;
+            } else {
+                left = mid + 1;
+            }
+        }
+
+        // Ensure index is within bounds
+        index = Math.min(index, words.length - 1);
+        let selectedWord = words[index];
+
+        // If the selected word was recently used, try to find an alternative
+        // But don't loop indefinitely - if all options are exhausted, use the selected word
+        if (recentWords.has(selectedWord) && words.length > 1) {
+            // Try to find a different word that wasn't recently used
+            const attempts = Math.min(5, words.length); // Limit attempts to avoid performance issues
+            let attemptsCount = 0;
+
+            while (attemptsCount < attempts) {
+                // Randomly select another word from the top 50% of the frequency list
+                // to maintain some naturalness while avoiding repetition
+                const randomIndex = Math.floor(Math.random() * Math.min(words.length, 50 + Math.floor(words.length * 0.1)));
+                if (!recentWords.has(words[randomIndex])) {
+                    selectedWord = words[randomIndex];
+                    break;
+                }
+                attemptsCount++;
+            }
+        }
+
+        return selectedWord;
+    }
+
+    // Create prefix sum array for modified weighted selection that reduces dominance of top words
+    createZipfWeightedPrefixSum(n) {
+        // Create a more spread-out distribution that reduces dominance of most frequent words
+        const weights = [];
+        let sum = 0;
+        const prefixSum = [];
+
+        for (let i = 0; i < n; i++) {
+            // Use square root function to make the distribution less steep
+            // This reduces the probability of the most frequent words
+            const weight = 1.0 / Math.sqrt(i + 1);  // Square root creates a more gradual decline
+            weights.push(weight);
+            sum += weight;
+            prefixSum.push(sum);
+        }
+
+        return prefixSum;
+    }
+
+    // Select a word using weighted random sampling but reducing repetition
+    selectWordWithDiversity(words) {
+        // Generate adjusted weights that penalize recently used words
+        if (!this.diversityPrefixSum || this.diversityPrefixSum.length !== words.length) {
+            this.diversityPrefixSum = this.createZipfWeightedPrefixSum(words.length);
+        }
+
+        // Create temporary adjusted weights based on recent usage
+        const adjustedWeights = [];
+        const baseWeights = [];
+
+        // Calculate base weights from the prefix sum
+        for (let i = 0; i < words.length; i++) {
+            if (i === 0) {
+                baseWeights.push(this.diversityPrefixSum[0]);
+            } else {
+                baseWeights.push(this.diversityPrefixSum[i] - this.diversityPrefixSum[i-1]);
+            }
+        }
+
+        // Apply penalty to recently used words
+        for (let i = 0; i < words.length; i++) {
+            let penalty = 1.0; // no penalty by default
+            const usageCount = this.recentUsage.get(words[i]) || 0;
+
+            // Apply stronger penalty for more frequent recent usage
+            if (usageCount > 0) {
+                penalty = 1.0 / (1.0 + usageCount * 0.5); // Reduce weight by up to 50% based on usage
+            }
+
+            adjustedWeights.push(baseWeights[i] * penalty);
+        }
+
+        // Create adjusted prefix sum
+        const adjustedPrefixSum = [];
+        let sum = 0;
+        for (let i = 0; i < adjustedWeights.length; i++) {
+            sum += adjustedWeights[i];
+            adjustedPrefixSum.push(sum);
+        }
+
+        // Generate a random value between 0 and the adjusted total sum
+        const totalWeight = adjustedPrefixSum[adjustedPrefixSum.length - 1];
+        if (totalWeight <= 0) {
+            // Fallback to simple random selection if all weights are zero
+            const randomIndex = Math.floor(Math.random() * words.length);
+            this.updateRecentUsage(words[randomIndex]);
+            return words[randomIndex];
+        }
+
+        const randomValue = Math.random() * totalWeight;
+
+        // Binary search to find the position where randomValue fits in adjustedPrefixSum
+        let left = 0;
+        let right = adjustedPrefixSum.length - 1;
+        let index = 0;
+
+        while (left <= right) {
+            const mid = Math.floor((left + right) / 2);
+            if (adjustedPrefixSum[mid] >= randomValue) {
+                index = mid;
+                right = mid - 1;
+            } else {
+                left = mid + 1;
+            }
+        }
+
+        // Ensure index is within bounds
+        index = Math.min(index, words.length - 1);
+
+        // Update recent usage
+        this.updateRecentUsage(words[index]);
+
+        return words[index];
+    }
+
+    // Update recent usage map, keeping only recent entries
+    updateRecentUsage(word) {
+        this.recentUsage.set(word, (this.recentUsage.get(word) || 0) + 1);
+
+        // Keep only the most recent entries (limit to 20 total usage counts)
+        if (this.recentUsage.size > 20) {
+            // Simple approach: reduce all counts by 1, removing those that reach 0
+            const newMap = new Map();
+            for (const [w, count] of this.recentUsage) {
+                const newCount = Math.max(0, count - 0.2); // Gradually reduce usage
+                if (newCount > 0) {
+                    newMap.set(w, newCount);
+                }
+            }
+            this.recentUsage = newMap;
+        }
     }
 
     setupEventListeners() {
@@ -85,8 +319,13 @@ class TypingTest {
 
         if (key === ' ' && !this.isActive) {
             e.preventDefault();
-            this.inputValue = '';
-            this.startTest();
+            // Only start the test if input is empty, otherwise add space to input
+            if (this.inputValue === '') {
+                this.startTest();
+            } else {
+                this.inputValue += e.key;
+                this.validateInput();
+            }
             return;
         }
 
@@ -132,62 +371,46 @@ class TypingTest {
     }
 
     validateInput() {
+        // Reset errors to recount
+        this.errors = 0;
         const textDisplay = document.getElementById('text-display');
         let html = '';
 
+        // Track word boundaries properly
+        let inTypedWord = false;
+        let wordStartIndex = 0;
+
         for (let i = 0; i < this.text.length; i++) {
             let className = 'char';
+            let charToDisplay = this.text[i];
 
             if (i < this.inputValue.length) {
                 if (this.inputValue[i] === this.text[i]) {
-                    // Check if this character is part of a completed word
-                    if (this.text[i] === ' ' && i > 0) {
-                        // This is a space that has been correctly typed - check if the entire word before it is correct
-                        const wordStart = this.findWordStart(i - 1);
-                        const wordCorrect = this.isWordCorrect(wordStart, i - 1);
-                        if (wordCorrect) {
+                    className += ' correct';
+
+                    // Check if this completes a word
+                    if (this.text[i] !== ' ' && i + 1 < this.text.length && this.text[i + 1] === ' ') {
+                        const wordStart = this.findWordStart(i);
+                        if (this.isWordCorrect(wordStart, i)) {
+                            // Mark this entire word as correct-word
                             className += ' correct-word';
-                        } else {
-                            className += ' correct';
-                        }
-                    } else {
-                        // Check if we're at the end of a word (before a space) and the word is correct
-                        if (i + 1 < this.text.length && this.text[i + 1] === ' ' && i >= 0) {
-                            const wordStart = this.findWordStart(i);
-                            const wordCorrect = this.isWordCorrect(wordStart, i);
-                            if (wordCorrect) {
-                                className += ' correct-word';
-                            } else {
-                                className += ' correct';
-                            }
-                        } else {
-                            // Check if we're at the end of the text and the final word is correct
-                            if (i === this.inputValue.length - 1 && i + 1 === this.text.length) {
-                                const wordStart = this.findWordStart(i);
-                                const wordCorrect = this.isWordCorrect(wordStart, i);
-                                if (wordCorrect) {
-                                    className += ' correct-word';
-                                } else {
-                                    className += ' correct';
-                                }
-                            } else {
-                                // Just a regular correctly typed character
-                                className += ' correct';
-                            }
                         }
                     }
                 } else {
+                    // Character is incorrect
                     className += ' incorrect';
+                    // Don't replace the character underneath the cursor, show original text
+                    charToDisplay = this.text[i];
+
                     if (i >= this.currentIndex) this.errors++;
                 }
+
             } else if (i === this.inputValue.length) {
+                // Current position
                 className += ' current';
                 this.currentIndex = i;
             }
 
-            // Show the user's typed character for incorrect characters, otherwise show the original text
-            const charToDisplay = className.includes('incorrect') && i < this.inputValue.length ?
-                this.inputValue[i] : this.text[i];
             html += `<span class="${className}">${charToDisplay}</span>`;
         }
 
@@ -195,9 +418,6 @@ class TypingTest {
 
         // Scroll to keep current character in view
         this.scrollToCurrentChar();
-
-        // Update smooth cursor position to follow the current character
-        this.updateSmoothCursorToCurrentChar();
     }
 
     // Helper method to find the start of the current word
@@ -249,41 +469,7 @@ class TypingTest {
         }
     }
 
-    updateSmoothCursorToCurrentChar() {
-        // Only update typing cursor when the test is active
-        if (!this.isActive) return;
 
-        const textDisplay = document.getElementById('text-display');
-        const currentCharElement = textDisplay.querySelector('.current');
-
-        if (currentCharElement) {
-            // Get the position of the current character element
-            const rect = currentCharElement.getBoundingClientRect();
-            const containerRect = textDisplay.getBoundingClientRect();
-
-            // Calculate the position relative to the text display container
-            this.typingCursorTargetX = rect.left - containerRect.left + rect.width / 2;
-            this.typingCursorTargetY = rect.top - containerRect.top + rect.height / 4;
-
-            if (!this.typingCursorVisible) {
-                this.typingCursorVisible = true;
-                if (this.typingCursor) {
-                    this.typingCursor.classList.add('visible');
-                }
-            }
-        }
-    }
-
-    updateTypingCursorPosition() {
-        if (this.typingCursor) {
-            // Apply easing to create smooth movement
-            this.typingCursorX += (this.typingCursorTargetX - this.typingCursorX) * 0.3;
-            this.typingCursorY += (this.typingCursorTargetY - this.typingCursorY) * 0.3;
-
-            // Apply the position to the element
-            this.typingCursor.style.transform = `translate(${this.typingCursorX}px, ${this.typingCursorY}px)`;
-        }
-    }
 
     updateStats() {
         const elapsed = (Date.now() - this.startTime) / 1000 / 60; // minutes
@@ -357,11 +543,6 @@ class TypingTest {
             this.updateStats();
         }, 1000);
 
-        // Show the typing cursor when test starts
-        if (this.typingCursor) {
-            this.typingCursor.classList.add('visible');
-            this.typingCursorVisible = true;
-        }
     }
 
     startTimer() {
@@ -393,11 +574,6 @@ class TypingTest {
 
         this.updateStats();
 
-        // Hide the typing cursor when test ends
-        if (this.typingCursor) {
-            this.typingCursor.classList.remove('visible');
-            this.typingCursorVisible = false;
-        }
     }
 
     isTestComplete() {
@@ -407,10 +583,10 @@ class TypingTest {
         return this.currentIndex >= this.text.length;
     }
 
-    restart() {
+    async restart() {
         this.endTest();
         this.inputValue = '';
-        this.generateText();
+        await this.generateText();
         this.updateDisplay();
         this.remainingTime = this.timerDuration;
         this.updateTimeDisplay();
@@ -433,101 +609,8 @@ class TypingTest {
         textDisplay.innerHTML = html;
         this.updateTimeDisplay();
 
-        // Get reference to the typing cursor element after DOM update
-        this.typingCursor = document.getElementById('typing-cursor');
     }
 
-    initSmoothCursor() {
-        // Get the smooth cursor element
-        this.cursor = document.getElementById('smooth-cursor');
-
-        if (!this.cursor) {
-            console.error('Smooth cursor element not found');
-            return;
-        }
-
-        // Initialize cursor position to current mouse position
-        this.cursorX = window.innerWidth / 2;
-        this.cursorY = window.innerHeight / 2;
-        this.targetX = window.innerWidth / 2;
-        this.targetY = window.innerHeight / 2;
-
-        this.updateCursorPosition();
-
-        // Add mouse move listener to track mouse position
-        document.addEventListener('mousemove', (e) => {
-            // Only update mouse position target when typing test is not active
-            if (!this.isActive) {
-                this.targetX = e.clientX;
-                this.targetY = e.clientY;
-            }
-        });
-
-        // Add mouse enter/leave events to handle cursor visibility
-        document.addEventListener('mouseenter', (e) => {
-            if (this.cursor) {
-                this.cursor.classList.remove('hidden');
-            }
-        });
-
-        document.addEventListener('mouseleave', (e) => {
-            if (this.cursor) {
-                this.cursor.classList.add('hidden');
-            }
-        });
-
-        // Add click events to make cursor expand
-        document.addEventListener('mousedown', () => {
-            if (this.cursor) {
-                this.cursor.classList.add('expanded');
-            }
-        });
-
-        document.addEventListener('mouseup', () => {
-            if (this.cursor) {
-                this.cursor.classList.remove('expanded');
-            }
-        });
-
-        // Start the animation loop
-        this.animateCursor();
-    }
-
-    updateCursorPosition() {
-        if (this.cursor) {
-            this.cursor.style.left = `${this.cursorX}px`;
-            this.cursor.style.top = `${this.cursorY}px`;
-        }
-    }
-
-    animateCursor() {
-        // Calculate distance to target for the mouse-following cursor
-        const dx = this.targetX - this.cursorX;
-        const dy = this.targetY - this.cursorY;
-
-        // Apply easing with velocity-based movement for smoother animation
-        this.cursorVelocityX += dx * this.cursorSmoothness;
-        this.cursorVelocityY += dy * this.cursorSmoothness;
-
-        // Apply damping to prevent oscillation
-        this.cursorVelocityX *= 0.7;
-        this.cursorVelocityY *= 0.7;
-
-        // Update position
-        this.cursorX += this.cursorVelocityX;
-        this.cursorY += this.cursorVelocityY;
-
-        // Update the cursor position
-        this.updateCursorPosition();
-
-        // Update typing cursor position if test is active
-        if (this.isActive && this.typingCursor) {
-            this.updateTypingCursorPosition();
-        }
-
-        // Continue the animation
-        requestAnimationFrame(() => this.animateCursor());
-    }
 }
 
 // Initialize the typing test

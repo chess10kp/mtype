@@ -7,8 +7,8 @@
 
 body {
     font-family: 'Victor Mono', 'Fira Code', 'Consolas', monospace;
-    background: #323437;
-    color: #d1d0c5;
+    background: #0e1419;
+    color: #ebdbb2;
     line-height: 1.6;
     min-height: 100vh;
     display: flex;
@@ -69,7 +69,7 @@ html::-webkit-scrollbar {
     display: block;
     font-size: 2.5rem;
     font-weight: 600;
-    color: #d1d0c5;
+    color: #ebdbb2;
 }
 
 /* Typing area */
@@ -79,7 +79,7 @@ html::-webkit-scrollbar {
 }
 
 .text-display {
-    background: #2c2e31;
+    background: #0e1419;
     border-radius: 12px;
     padding: 2rem;
     font-size: 3.5rem;
@@ -89,7 +89,7 @@ html::-webkit-scrollbar {
     height: calc((3.5rem * 2) * 3 + 4rem); /* 3 lines + total vertical padding (2rem top + 2rem bottom) */
     min-height: calc((3.5rem * 2) * 3 + 4rem); /* 3 lines + total vertical padding */
     max-height: calc((3.5rem * 2) * 3 + 4rem); /* 3 lines + total vertical padding */
-    border: 2px solid #646669;
+    border: 2px solid #3c3836;
     transition: border-color 0.2s;
     text-align: justify;
     width: calc(100% - 4rem);
@@ -100,13 +100,6 @@ html::-webkit-scrollbar {
     word-break: break-word;
 }
 
-/* Ensure typing cursor is properly positioned within the text display */
-.text-display #typing-cursor {
-    position: absolute;
-    top: 0;
-    left: 0;
-    transform: translate(0, 0);
-}
 
 .text-display.active {
     border-color: transparent;
@@ -114,51 +107,13 @@ html::-webkit-scrollbar {
 
 .char {
     display: inline;
+    color: #646669;
     transition: color 0.2s ease, background 0.2s ease;
 }
 
-/* Smooth Cursor */
-.smooth-cursor {
-    position: fixed;
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    background-color: #e2b714;
-    pointer-events: none;
-    z-index: 9999;
-    transform: translate(-50%, -50%);
-    mix-blend-mode: difference;
-    transition: transform 0.1s ease-out, width 0.2s ease-out, height 0.2s ease-out;
-}
-
-.smooth-cursor.hidden {
-    opacity: 0;
-}
-
-.smooth-cursor.expanded {
-    width: 20px;
-    height: 20px;
-    transition: transform 0.1s ease-out, width 0.2s ease-out, height 0.2s ease-out;
-}
-
-/* Smooth Typing Cursor */
-.typing-cursor {
-    position: absolute;
-    width: 2px;
-    height: 1.5em; /* Match the line height */
-    background-color: #e2b714;
-    opacity: 0;
-    transition: opacity 0.2s ease, transform 0.2s ease;
-    pointer-events: none;
-    border-radius: 1px;
-}
-
-.typing-cursor.visible {
-    opacity: 1;
-}
 
 .char.correct {
-    color: #d1d0c5;
+    color: #ebdbb2;
     transition: color 0.2s ease, background 0.2s ease;
 }
 
@@ -168,7 +123,16 @@ html::-webkit-scrollbar {
     transition: color 0.2s ease, background 0.2s ease;
 }
 
+.char.incorrect-space {
+    color: #ca4754;
+    background: rgba(202, 71, 84, 0.3);
+    transition: color 0.2s ease, background 0.2s ease;
+    border: 1px dashed #ca4754; /* Visual indicator for an incorrect space */
+}
+
 .char.current {
+    background-color: #ebdbb2; /* New foreground color as background for cursor */
+    color: #0e1419; /* New background color as text for contrast */
     transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease;
 }
 
@@ -208,7 +172,7 @@ html::-webkit-scrollbar {
 
 .shortcut-group h4 {
     margin-bottom: 0.5rem;
-    color: #d1d0c5;
+    color: #ebdbb2;
 }
 
 .shortcut {
@@ -217,19 +181,19 @@ html::-webkit-scrollbar {
 }
 
 kbd {
-    background: #2c2e31;
+    background: #1d242b;
     border: 1px solid #646669;
     border-radius: 3px;
     padding: 0.1rem 0.3rem;
     font-family: inherit;
     font-size: 0.8rem;
-    color: #d1d0c5;
+    color: #ebdbb2;
 }
 
 .controls button {
-    background: #2c2e31;
+    background: #1d242b;
     border: 1px solid #646669;
-    color: #d1d0c5;
+    color: #ebdbb2;
     padding: 0.75rem 1.5rem;
     border-radius: 4px;
     cursor: pointer;
@@ -239,12 +203,12 @@ kbd {
 }
 
 .controls button:hover {
-    background: #3c3f41;
+    background: #2c343c;
 }
 
 .controls button:active {
     background: #e2b714;
-    color: #323437;
+    color: #0e1419;
     border-color: #e2b714;
 }
 
