@@ -6,7 +6,7 @@
 }
 
 body {
-    font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+    font-family: 'Victor Mono', 'Fira Code', 'Consolas', monospace;
     background: #323437;
     color: #d1d0c5;
     line-height: 1.6;
@@ -75,30 +75,33 @@ html::-webkit-scrollbar {
 /* Typing area */
 .typing-area {
     width: 100%;
-    margin: 0 2rem 2rem 2rem;
+    margin: 0 0 2rem 0;
 }
 
 .text-display {
     background: #2c2e31;
     border-radius: 12px;
     padding: 2rem;
-    font-size: 2.2rem;
+    font-size: 3.5rem;
     line-height: 2;
     margin: 0 2rem 1rem 2rem;
     position: relative;
-    height: 15rem; /* Approximately 3 lines with current font size and line-height */
-    min-height: 15rem;
-    max-height: 15rem;
-    border: 2px solid transparent;
+    height: calc((3.5rem * 2) * 3 + 4rem); /* 3 lines + total vertical padding (2rem top + 2rem bottom) */
+    min-height: calc((3.5rem * 2) * 3 + 4rem); /* 3 lines + total vertical padding */
+    max-height: calc((3.5rem * 2) * 3 + 4rem); /* 3 lines + total vertical padding */
+    border: 2px solid #646669;
     transition: border-color 0.2s;
     text-align: justify;
     width: calc(100% - 4rem);
     overflow: hidden;
     display: block;
+    box-sizing: border-box;
+    max-width: 100%;
+    word-break: break-word;
 }
 
 .text-display.active {
-    border-color: #e2b714;
+    border-color: transparent;
 }
 
 .char {
@@ -190,7 +193,7 @@ kbd {
 }
 
 /* Responsive */
-@media (max-width: 768px) {
+@media (max-width: 1200px) {
     .container {
         padding: 1rem;
     }
@@ -206,14 +209,16 @@ kbd {
 
     .text-display {
         padding: 1.5rem;
-        font-size: 1.8rem;
-        height: 12rem; /* Approximately 3 lines with current font size and line-height */
-        min-height: 12rem;
-        max-height: 12rem;
+        font-size: 3rem;
+        height: calc((3rem * 2) * 3 + 3rem); /* 3 lines + total vertical padding (1.5rem top + 1.5rem bottom) */
+        min-height: calc((3rem * 2) * 3 + 3rem); /* 3 lines + total vertical padding */
+        max-height: calc((3rem * 2) * 3 + 3rem); /* 3 lines + total vertical padding */
         margin: 0 2rem 1rem 2rem;
         width: calc(100% - 4rem);
+        max-width: calc(100% - 4rem);
     }
 
 
 
 }
+

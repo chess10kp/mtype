@@ -99,7 +99,14 @@ class TypingTest {
         if (this.isActive) {
             if (key === 'backspace') {
                 e.preventDefault();
-                this.inputValue = this.inputValue.slice(0, -1);
+                // Check if Ctrl key is pressed for whole word deletion
+                if (e.ctrlKey) {
+                    // Delete the entire word backwards (including following space)
+                    this.inputValue = this.deleteWordBackward(this.inputValue);
+                } else {
+                    // Delete single character
+                    this.inputValue = this.inputValue.slice(0, -1);
+                }
                 this.validateInput();
                 this.updateStats();
             } else if (key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
@@ -164,9 +171,14 @@ class TypingTest {
             const containerHeight = textDisplay.clientHeight;
             const scrollTop = textDisplay.scrollTop;
 
-            // If the current character is below the visible area, scroll down
-            if (charTop > (scrollTop + containerHeight - 50)) { // 50px buffer
-                textDisplay.scrollTop = charTop - containerHeight + 60; // 60px buffer
+            // Calculate the position of the last fully visible line
+            // We want to scroll early when reaching the beginning of the final visible line
+            const finalVisibleLineThreshold = scrollTop + containerHeight - (containerHeight / 3); // At 2/3 of the container height
+
+            // If the current character is approaching the end of the visible area, scroll to show next line
+            if (charTop > finalVisibleLineThreshold) {
+                // Scroll so that the current character is about 1/3 down the container
+                textDisplay.scrollTop = charTop - (containerHeight / 3);
             }
             // If the current character is above the visible area, scroll up
             else if (charTop < scrollTop) {
@@ -190,15 +202,26 @@ class TypingTest {
         document.getElementById('accuracy').textContent = `${accuracy}%`;
     }
 
+    // Helper method to delete a word backward from the input string
+    deleteWordBackward(input) {
+        // Find the last space character from the end
+        const lastSpaceIndex = input.lastIndexOf(' ');
+
+        if (lastSpaceIndex >= 0) {
+            // If there's a space, delete from the end to the beginning of the last word (including the space)
+            return input.substring(0, lastSpaceIndex);
+        } else {
+            // If there's no space, delete the entire string (single word)
+            return '';
+        }
+    }
+
     updateTimeDisplay() {
-        const timeWordsLabel = document.getElementById('time-words-label');
         const timeWordsValue = document.getElementById('time-words-value');
 
         if (this.mode === 'timer') {
-            timeWordsLabel.textContent = 'Time';
-            timeWordsValue.textContent = `${this.remainingTime}s`;
+            timeWordsValue.textContent = `${this.remainingTime}`;
         } else {
-            timeWordsLabel.textContent = 'Words';
             timeWordsValue.textContent = `${this.wordsTarget - this.wordsTyped}`;
         }
     }
