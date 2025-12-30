@@ -1,0 +1,219 @@
+/* Reset and base styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+    background: #323437;
+    color: #d1d0c5;
+    line-height: 1.6;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    overflow: hidden;
+}
+
+/* Hide scrollbars */
+html {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+}
+
+html::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+}
+
+.container {
+    width: 100%;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+
+
+/* Stats */
+.stats {
+    display: flex;
+    justify-content: center;
+    gap: 4rem;
+    margin: 0 2rem 3rem 2rem;
+    opacity: 0.7;
+    transition: opacity 0.3s;
+}
+
+.stats.active {
+    opacity: 1;
+}
+
+.stat {
+    text-align: center;
+}
+
+.stat-label {
+    display: block;
+    font-size: 0.9rem;
+    color: #646669;
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.stat-value {
+    display: block;
+    font-size: 2.5rem;
+    font-weight: 600;
+    color: #d1d0c5;
+}
+
+/* Typing area */
+.typing-area {
+    width: 100%;
+    margin: 0 2rem 2rem 2rem;
+}
+
+.text-display {
+    background: #2c2e31;
+    border-radius: 12px;
+    padding: 2rem;
+    font-size: 2.2rem;
+    line-height: 2;
+    margin: 0 2rem 1rem 2rem;
+    position: relative;
+    height: 15rem; /* Approximately 3 lines with current font size and line-height */
+    min-height: 15rem;
+    max-height: 15rem;
+    border: 2px solid transparent;
+    transition: border-color 0.2s;
+    text-align: justify;
+    width: calc(100% - 4rem);
+    overflow: hidden;
+    display: block;
+}
+
+.text-display.active {
+    border-color: #e2b714;
+}
+
+.char {
+    display: inline;
+}
+
+.char.correct {
+    color: #d1d0c5;
+}
+
+.char.incorrect {
+    color: #ca4754;
+    background: rgba(202, 71, 84, 0.3);
+}
+
+.char.current {
+    background: #646669;
+    color: #323437;
+}
+
+
+
+
+#typing-input:focus {
+    outline: none;
+    border-color: #e2b714;
+}
+
+#typing-input[readonly] {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Controls */
+.controls {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+/* Shortcuts */
+.shortcuts {
+    text-align: center;
+    color: #646669;
+    font-size: 0.9rem;
+}
+
+.shortcut-group h4 {
+    margin-bottom: 0.5rem;
+    color: #d1d0c5;
+}
+
+.shortcut {
+    display: inline-block;
+    margin: 0.25rem 0.5rem;
+}
+
+kbd {
+    background: #2c2e31;
+    border: 1px solid #646669;
+    border-radius: 3px;
+    padding: 0.1rem 0.3rem;
+    font-family: inherit;
+    font-size: 0.8rem;
+    color: #d1d0c5;
+}
+
+.controls button {
+    background: #2c2e31;
+    border: 1px solid #646669;
+    color: #d1d0c5;
+    padding: 0.75rem 1.5rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 1rem;
+    transition: all 0.2s;
+}
+
+.controls button:hover {
+    background: #3c3f41;
+}
+
+.controls button:active {
+    background: #e2b714;
+    color: #323437;
+    border-color: #e2b714;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .container {
+        padding: 1rem;
+    }
+
+    .stats {
+        gap: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-value {
+        font-size: 2rem;
+    }
+
+    .text-display {
+        padding: 1.5rem;
+        font-size: 1.8rem;
+        height: 12rem; /* Approximately 3 lines with current font size and line-height */
+        min-height: 12rem;
+        max-height: 12rem;
+        margin: 0 2rem 1rem 2rem;
+        width: calc(100% - 4rem);
+    }
+
+
+
+}
