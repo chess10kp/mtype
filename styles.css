@@ -5,10 +5,22 @@
     box-sizing: border-box;
 }
 
+:root {
+    --bg-primary: #0e1419;
+    --text-primary: #ebdbb2;
+    --text-secondary: #646669;
+    --border-base: #3c3836;
+    --text-error: #ca4754;
+    --text-success: #72f1b8;
+    --accent-primary: #e2b714;
+    --ui-element-bg: #1d242b;
+    --ui-element-hover: #2c343c;
+}
+
 body {
     font-family: 'Victor Mono', 'Fira Code', 'Consolas', monospace;
-    background: #0e1419;
-    color: #ebdbb2;
+    background: var(--bg-primary);
+    color: var(--text-primary);
     line-height: 1.6;
     min-height: 100vh;
     display: flex;
@@ -59,7 +71,7 @@ html::-webkit-scrollbar {
 .stat-label {
     display: block;
     font-size: 0.9rem;
-    color: #646669;
+    color: var(--text-secondary);
     margin-bottom: 0.5rem;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -69,7 +81,7 @@ html::-webkit-scrollbar {
     display: block;
     font-size: 2.5rem;
     font-weight: 600;
-    color: #ebdbb2;
+    color: var(--text-primary);
 }
 
 /* Typing area */
@@ -79,8 +91,7 @@ html::-webkit-scrollbar {
 }
 
 .text-display {
-    background: #0e1419;
-    border-radius: 12px;
+    background: var(--bg-primary);
     padding: 2rem;
     font-size: 3.5rem;
     line-height: 2;
@@ -89,7 +100,7 @@ html::-webkit-scrollbar {
     height: calc((3.5rem * 2) * 3 + 4rem); /* 3 lines + total vertical padding (2rem top + 2rem bottom) */
     min-height: calc((3.5rem * 2) * 3 + 4rem); /* 3 lines + total vertical padding */
     max-height: calc((3.5rem * 2) * 3 + 4rem); /* 3 lines + total vertical padding */
-    border: 2px solid #3c3836;
+    border: 1px solid var(--border-base);
     transition: border-color 0.2s;
     text-align: justify;
     width: calc(100% - 4rem);
@@ -107,41 +118,48 @@ html::-webkit-scrollbar {
 
 .char {
     display: inline;
-    color: #646669;
+    color: var(--text-secondary);
     transition: color 0.2s ease, background 0.2s ease, opacity 0.2s ease;
     will-change: color, background, opacity;
 }
 
 
 .char.correct {
-    color: #ebdbb2;
+    color: var(--text-primary);
     transition: color 0.2s ease, background 0.2s ease, opacity 0.2s ease;
 }
 
 .char.incorrect {
-    color: #ca4754;
+    color: var(--text-error);
     background: rgba(202, 71, 84, 0.3);
     transition: color 0.2s ease, background 0.2s ease, opacity 0.2s ease;
 }
 
 .char.incorrect-space {
-    color: #ca4754;
+    color: var(--text-error);
     background: rgba(202, 71, 84, 0.3);
     transition: color 0.2s ease, background 0.2s ease, opacity 0.2s ease;
-    border: 1px dashed #ca4754; /* Visual indicator for an incorrect space */
+    border: 1px dashed var(--text-error); /* Visual indicator for an incorrect space */
 }
 
 .char.current {
-    background-color: #ebdbb2; /* New foreground color as background for cursor */
-    color: #0e1419; /* New background color as text for contrast */
+    background-color: var(--text-primary); /* New foreground color as background for cursor */
+    color: var(--bg-primary); /* New background color as text for contrast */
     transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease, opacity 0.15s ease;
     animation: cursorBlink 1s infinite step-end;
 }
 
 .char.correct-word {
-    color: #72f1b8;
+    color: var(--text-success);
     text-shadow: 0 0 5px rgba(114, 241, 184, 0.5);
     transition: color 0.2s ease, background 0.2s ease, text-shadow 0.2s ease, opacity 0.2s ease;
+}
+
+.char.pace-caret {
+    background-color: var(--accent-primary); /* Yellow accent color as background for pace cursor */
+    color: var(--bg-primary); /* Dark background as text color for contrast */
+    transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease, opacity 0.15s ease;
+    animation: paceCursorBlink 1s infinite step-end;
 }
 
 @keyframes cursorBlink {
@@ -153,12 +171,21 @@ html::-webkit-scrollbar {
     }
 }
 
+@keyframes paceCursorBlink {
+    0%, 100% {
+        opacity: 0.7;
+    }
+    50% {
+        opacity: 0.4;
+    }
+}
+
 
 
 
 #typing-input:focus {
     outline: none;
-    border-color: #e2b714;
+    border-color: var(--accent-primary);
 }
 
 #typing-input[readonly] {
@@ -170,20 +197,49 @@ html::-webkit-scrollbar {
 .controls {
     display: flex;
     justify-content: center;
-    gap: 1rem;
+    gap: 2rem;
     margin-bottom: 2rem;
+    flex-wrap: wrap;
+}
+
+.controls > div {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-secondary);
+}
+
+.controls label {
+    font-size: 0.9rem;
+}
+
+.controls select,
+.controls input[type="number"] {
+    background: var(--ui-element-bg);
+    border: 1px solid var(--text-secondary);
+    color: var(--text-primary);
+    padding: 0.3rem 0.5rem;
+    border-radius: 3px;
+    font-family: inherit;
+    font-size: 0.9rem;
+}
+
+.controls input[type="checkbox"] {
+    width: 1.2rem;
+    height: 1.2rem;
+    accent-color: var(--accent-primary);
 }
 
 /* Shortcuts */
 .shortcuts {
     text-align: center;
-    color: #646669;
+    color: var(--text-secondary);
     font-size: 0.9rem;
 }
 
 .shortcut-group h4 {
     margin-bottom: 0.5rem;
-    color: #ebdbb2;
+    color: var(--text-primary);
 }
 
 .shortcut {
@@ -192,19 +248,19 @@ html::-webkit-scrollbar {
 }
 
 kbd {
-    background: #1d242b;
-    border: 1px solid #646669;
+    background: var(--ui-element-bg);
+    border: 1px solid var(--text-secondary);
     border-radius: 3px;
     padding: 0.1rem 0.3rem;
     font-family: inherit;
     font-size: 0.8rem;
-    color: #ebdbb2;
+    color: var(--text-primary);
 }
 
 .controls button {
-    background: #1d242b;
-    border: 1px solid #646669;
-    color: #ebdbb2;
+    background: var(--ui-element-bg);
+    border: 1px solid var(--text-secondary);
+    color: var(--text-primary);
     padding: 0.75rem 1.5rem;
     border-radius: 4px;
     cursor: pointer;
@@ -214,13 +270,13 @@ kbd {
 }
 
 .controls button:hover {
-    background: #2c343c;
+    background: var(--ui-element-hover);
 }
 
 .controls button:active {
-    background: #e2b714;
-    color: #0e1419;
-    border-color: #e2b714;
+    background: var(--accent-primary);
+    color: var(--bg-primary);
+    border-color: var(--accent-primary);
 }
 
 /* Responsive */
@@ -319,16 +375,14 @@ kbd {
 .results-content {
     text-align: center;
     padding: 2rem;
-    border-radius: 12px;
-    background: #1d242b;
-    border: 2px solid #e2b714;
+    background: var(--ui-element-bg);
     max-width: 90%;
     width: 500px;
 }
 
 .results-title {
     font-size: 2rem;
-    color: #e2b714;
+    color: var(--accent-primary);
     margin-bottom: 1.5rem;
     font-weight: bold;
 }
@@ -346,19 +400,19 @@ kbd {
 .final-stat-value {
     font-size: 3rem;
     font-weight: bold;
-    color: #72f1b8;
+    color: var(--text-success);
     margin-bottom: 0.5rem;
 }
 
 .final-stat-label {
     font-size: 0.9rem;
-    color: #646669;
+    color: var(--text-secondary);
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
 
 .restart-instruction {
-    color: #646669;
+    color: var(--text-secondary);
     font-size: 1.1rem;
     margin-top: 1rem;
 }

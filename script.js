@@ -17,62 +17,28 @@ class TypingTest {
 
         this.typingCursor = null;
 
+        // Pace caret functionality
+        this.paceCaretActive = false;
+        this.paceCaretIndex = 0;
+        this.paceWpm = 60; // Default pace of 60 WPM
+        this.paceInterval = null;
+
         this.init();
     }
 
     async init() {
+        // Set default language to 'english' which will load data/english.json
+        this.selectedLanguage = 'english';
         await this.generateText();
         this.setupEventListeners();
         this.updateDisplay();
     }
 
     // Load language data with error handling
-    async loadLanguageData(language = 'english') {
+    async loadLanguageData(language) {
         try {
-            // Determine which file to load based on the target text length
+            // For explicit language selections (like "english", "english_1k") load exactly that file
             let filename = `data/${language}.json`;
-            const targetLength = this.mode === 'words' ? this.wordsTarget : 200;
-
-            // For longer texts, use larger word lists if available
-            if (targetLength > 500) {
-                const largeFiles = [
-                    `data/${language}_450k.json`,
-                    `data/${language}_650k.json`,
-                    `data/${language}_500k.json`,
-                    `data/${language}_250k.json`,
-                    `data/${language}_100k.json`,
-                    `data/${language}_10k.json`
-                ];
-                for (const file of largeFiles) {
-                    try {
-                        const response = await fetch(file);
-                        if (response.ok) {
-                            filename = file;
-                            break;
-                        }
-                    } catch (e) {
-                        continue; // Try next file
-                    }
-                }
-            } else if (targetLength > 100) {
-                const mediumFiles = [
-                    `data/${language}_10k.json`,
-                    `data/${language}_5k.json`,
-                    `data/${language}_2k.json`,
-                    `data/${language}_1k.json`
-                ];
-                for (const file of mediumFiles) {
-                    try {
-                        const response = await fetch(file);
-                        if (response.ok) {
-                            filename = file;
-                            break;
-                        }
-                    } catch (e) {
-                        continue; // Try next file
-                    }
-                }
-            }
 
             const response = await fetch(filename);
             if (!response.ok) {
@@ -98,26 +64,76 @@ class TypingTest {
         }
     }
 
-    // Generate text using Zipf's Law for weighted random sampling
+    // Generate text using Zipf's Law for weighted random sampling ensuring no word repeats on same line
     async generateText() {
-        const words = await this.loadLanguageData('english');
+        const words = await this.loadLanguageData(this.selectedLanguage);
         if (words.length === 0) {
             console.error('No words loaded, using fallback');
             return;
         }
 
-        let generatedText = '';
         const targetLength = this.mode === 'words' ? this.wordsTarget : 200;
 
         // Initialize recent usage tracker
         this.recentUsage = new Map();
 
-        while (generatedText.split(' ').length < targetLength) {
-            const randomWord = this.selectWordWithDiversity(words);
-            generatedText += randomWord + ' ';
+        // Generate text with no repeated words on the same line
+        this.text = this.generateTextWithNoRepeatWords(words, targetLength);
+    }
+
+    // Generate text ensuring no word appears more than once on the same visual line
+    generateTextWithNoRepeatWords(words, targetLength) {
+        // We'll use an approach that creates the text and then processes it
+        // to identify when word repetition occurs on visual lines.
+        // For now, we'll use a more intelligent approach that looks at the words
+        // that have been recently added, which are likely to be on the same line
+        // due to how the text flows
+
+        let generatedWords = [];
+        // Track words that have been recently used to avoid repetition on same line
+        const recentLineWords = new Set();
+        // Keep track of a window of words that would likely appear on the same line
+        const lineWindow = [];
+        // Estimate number of words that can appear on a line based on layout
+        const wordsPerLineEstimate = 10; // Adjust based on actual layout
+
+        while (generatedWords.length < targetLength) {
+            let selectedWord;
+            let attempts = 0;
+            const maxAttempts = 50;
+
+            // Try to find a word that's not in the recent window
+            do {
+                selectedWord = this.selectWordWithDiversity(words);
+                attempts++;
+
+                // If too many attempts without success, clear recent words
+                if (attempts >= maxAttempts) {
+                    recentLineWords.clear();
+                    lineWindow.length = 0;
+                    break;
+                }
+            } while (attempts < maxAttempts && recentLineWords.has(selectedWord.toLowerCase()));
+
+            if (selectedWord) {
+                generatedWords.push(selectedWord);
+
+                // Add to recent words tracking
+                recentLineWords.add(selectedWord.toLowerCase());
+                lineWindow.push(selectedWord.toLowerCase());
+
+                // Maintain the window size
+                if (lineWindow.length > wordsPerLineEstimate) {
+                    const removedWord = lineWindow.shift();
+                    // Only remove from Set if no other occurrences are in the window
+                    if (!lineWindow.includes(removedWord)) {
+                        recentLineWords.delete(removedWord);
+                    }
+                }
+            }
         }
 
-        this.text = generatedText.trim();
+        return generatedWords.join(' ');
     }
 
     // Create prefix sum array for modified weighted selection
@@ -304,6 +320,37 @@ class TypingTest {
 
     setupEventListeners() {
         document.addEventListener('keydown', (e) => this.handleGlobalKeydown(e));
+
+        // Add event listeners for the new controls
+        const languageSelect = document.getElementById('language-select');
+        const paceToggle = document.getElementById('pace-toggle');
+        const paceWpmInput = document.getElementById('pace-wpm');
+
+        if (languageSelect) {
+            languageSelect.addEventListener('change', (e) => {
+                this.selectedLanguage = e.target.value;
+                this.restart();
+            });
+        }
+
+        if (paceToggle) {
+            paceToggle.addEventListener('change', (e) => {
+                if (e.target.checked) {
+                    this.activatePaceCaret();
+                } else {
+                    this.deactivatePaceCaret();
+                }
+            });
+        }
+
+        if (paceWpmInput) {
+            paceWpmInput.addEventListener('change', (e) => {
+                const wpm = parseInt(e.target.value);
+                if (!isNaN(wpm) && wpm >= 10 && wpm <= 500) {
+                    this.setPaceWpm(wpm);
+                }
+            });
+        }
     }
 
 
@@ -374,49 +421,59 @@ class TypingTest {
         // Reset errors to recount
         this.errors = 0;
         const textDisplay = document.getElementById('text-display');
-        let html = '';
 
-        // Track word boundaries properly
-        let inTypedWord = false;
-        let wordStartIndex = 0;
-
-        for (let i = 0; i < this.text.length; i++) {
-            let className = 'char';
-            let charToDisplay = this.text[i];
-
-            if (i < this.inputValue.length) {
-                if (this.inputValue[i] === this.text[i]) {
-                    className += ' correct';
-
-                    // Check if this completes a word
-                    if (this.text[i] !== ' ' && i + 1 < this.text.length && this.text[i + 1] === ' ') {
-                        const wordStart = this.findWordStart(i);
-                        if (this.isWordCorrect(wordStart, i)) {
-                            // Mark this entire word as correct-word
-                            className += ' correct-word';
-                        }
-                    }
-                } else {
-                    // Character is incorrect
-                    className += ' incorrect';
-                    // Don't replace the character underneath the cursor, show original text
-                    charToDisplay = this.text[i];
-
-                    if (i >= this.currentIndex) this.errors++;
-                }
-
-            } else if (i === this.inputValue.length) {
-                // Current position
-                className += ' current';
-                this.currentIndex = i;
-            }
-
-            html += `<span class="${className}">${charToDisplay}</span>`;
+        // Check if elements need to be created (fallback if somehow they don't exist)
+        if (textDisplay.children.length === 0) {
+            this.updateDisplay();
+            return;
         }
 
-        // Only update the HTML if it has changed to avoid unnecessary re-renders
-        if (textDisplay.innerHTML !== html) {
-            textDisplay.innerHTML = html;
+        // Update only the changed elements to reduce flickering
+        for (let i = 0; i < this.text.length; i++) {
+            if (i < textDisplay.children.length) {
+                const span = textDisplay.children[i];
+                let className = 'char';
+
+                if (i < this.inputValue.length) {
+                    if (this.inputValue[i] === this.text[i]) {
+                        className += ' correct';
+
+                        // Check if this completes a word
+                        if (this.text[i] !== ' ' && i + 1 < this.text.length && this.text[i + 1] === ' ') {
+                            const wordStart = this.findWordStart(i);
+                            if (this.isWordCorrect(wordStart, i)) {
+                                // Mark this entire word as correct-word
+                                className += ' correct-word';
+                            }
+                        }
+                    } else {
+                        // Character is incorrect
+                        className += ' incorrect';
+                        // Don't replace the character underneath the cursor, show original text
+
+                        if (i >= this.currentIndex) this.errors++;
+                    }
+                } else if (i === this.inputValue.length) {
+                    // Current position
+                    className += ' current';
+                    this.currentIndex = i;
+                }
+
+                // Add class for pace caret if active
+                if (this.paceCaretActive && i === this.paceCaretIndex) {
+                    className += ' pace-caret';
+                }
+
+                // Only update class if it changed
+                if (span.className !== className) {
+                    span.className = className;
+                }
+
+                // Update character if it's an incorrect one
+                if (i < this.inputValue.length && this.inputValue[i] !== this.text[i]) {
+                    span.textContent = this.text[i];
+                }
+            }
         }
 
         // Scroll to keep current character in view with smooth scrolling
@@ -490,9 +547,10 @@ class TypingTest {
         const elapsed = (Date.now() - this.startTime) / 1000 / 60; // minutes
         const typedChars = this.inputValue.length;
 
-        // Calculate WPM (words per minute)
-        const wordsTyped = typedChars / 5; // standard: 5 chars = 1 word
-        const wpm = Math.round(wordsTyped / elapsed);
+        // Calculate WPM (words per minute) - only count correct characters
+        const correctChars = this.countCorrectChars();
+        const wordsTyped = correctChars / 5; // standard: 5 chars = 1 word
+        const wpm = elapsed > 0 ? Math.round(wordsTyped / elapsed) : 0;
 
         // Calculate accuracy
         const accuracy = typedChars > 0 ? Math.round(((typedChars - this.errors) / typedChars) * 100) : 100;
@@ -558,6 +616,13 @@ class TypingTest {
             this.updateStats();
         }, 1000);
 
+        // Start pace caret if it was enabled before the test started
+        if (document.getElementById('pace-toggle').checked) {
+            // Reset pace caret to start ahead of the user's current position
+            this.paceCaretIndex = 0; // Start from beginning initially
+            this.activatePaceCaret();
+        }
+
     }
 
     startTimer() {
@@ -581,6 +646,9 @@ class TypingTest {
         clearInterval(this.timer);
         clearInterval(this.statsInterval);
 
+        // Deactivate pace caret when ending test
+        this.deactivatePaceCaret();
+
         const textDisplay = document.getElementById('text-display');
         const stats = document.querySelector('.stats');
 
@@ -600,15 +668,26 @@ class TypingTest {
 
     }
 
+    countCorrectChars() {
+        let correctChars = 0;
+        for (let i = 0; i < Math.min(this.inputValue.length, this.text.length); i++) {
+            if (this.inputValue[i] === this.text[i]) {
+                correctChars++;
+            }
+        }
+        return correctChars;
+    }
+
     showFinalResults() {
         // Calculate final stats if not already calculated
         if (this.startTime && this.endTime) {
             const elapsed = (this.endTime - this.startTime) / 1000 / 60; // minutes
             const typedChars = this.inputValue.length;
 
-            // Calculate WPM (words per minute)
-            const wordsTyped = typedChars / 5; // standard: 5 chars = 1 word
-            const finalWpm = Math.round(wordsTyped / elapsed);
+            // Calculate WPM (words per minute) - only count correct characters
+            const correctChars = this.countCorrectChars();
+            const wordsTyped = correctChars / 5; // standard: 5 chars = 1 word
+            const finalWpm = elapsed > 0 ? Math.round(wordsTyped / elapsed) : 0;
 
             // Calculate accuracy
             const accuracy = typedChars > 0 ? Math.round(((typedChars - this.errors) / typedChars) * 100) : 100;
@@ -617,7 +696,6 @@ class TypingTest {
             let resultsHTML = `
                 <div id="results-overlay" class="results-overlay">
                     <div class="results-content">
-                        <h2 class="results-title">Test Complete!</h2>
                         <div class="final-stats">
                             <div class="final-stat">
                                 <div class="final-stat-value">${finalWpm}</div>
@@ -632,7 +710,7 @@ class TypingTest {
                                 <div class="final-stat-label">ERRORS</div>
                             </div>
                         </div>
-                        <div class="restart-instruction">Press Tab to restart</div>
+                        <div class="restart-instruction">Tab</div>
                     </div>
                 </div>
             `;
@@ -650,12 +728,25 @@ class TypingTest {
     }
 
     async restart() {
+        // Preserve pace caret state
+        const wasPaceActive = this.paceCaretActive;
+        const paceIndex = this.paceCaretIndex;
+
         this.endTest({ skipOverlay: true }); // Skip showing results overlay when restarting
         this.inputValue = '';
+
+        // Reset pace caret index when restarting
+        this.paceCaretIndex = 0;
+
         await this.generateText();
         this.updateDisplay();
         this.remainingTime = this.timerDuration;
         this.updateTimeDisplay();
+
+        // Restart pace caret if it was active
+        if (wasPaceActive) {
+            this.activatePaceCaret();
+        }
     }
 
     removeResultsOverlay() {
@@ -670,18 +761,124 @@ class TypingTest {
         this.restart();
     }
 
+    // Pace caret methods
+    togglePaceCaret() {
+        if (this.paceCaretActive) {
+            this.deactivatePaceCaret();
+        } else {
+            this.activatePaceCaret();
+        }
+    }
+
+    activatePaceCaret() {
+        this.paceCaretActive = true;
+
+        // Calculate the interval based on WPM (words per minute)
+        // 1 WPM = 5 chars per minute, so 60 WPM = 300 chars per minute = 5 chars per second
+        const charsPerMinute = this.paceWpm * 5;
+        const msPerChar = (60 * 1000) / charsPerMinute;
+
+        this.paceInterval = setInterval(() => {
+            if (this.paceCaretIndex < this.text.length - 1) {
+                this.paceCaretIndex++;
+                this.updateDisplay();
+            } else {
+                this.deactivatePaceCaret();
+            }
+        }, msPerChar);
+    }
+
+    deactivatePaceCaret() {
+        this.paceCaretActive = false;
+        if (this.paceInterval) {
+            clearInterval(this.paceInterval);
+            this.paceInterval = null;
+        }
+    }
+
+    setPaceWpm(wpm) {
+        this.paceWpm = wpm;
+        if (this.paceCaretActive) {
+            // Restart the pace caret with the new speed
+            this.deactivatePaceCaret();
+            this.activatePaceCaret();
+        }
+    }
 
     updateDisplay() {
         const textDisplay = document.getElementById('text-display');
-        let html = '';
 
-        for (let char of this.text) {
-            html += `<span class="char">${char}</span>`;
+        // Check if we need to rebuild the HTML completely (when children don't match text length)
+        if (textDisplay.children.length !== this.text.length) {
+            let html = '';
+
+            for (let i = 0; i < this.text.length; i++) {
+                let className = 'char';
+                let charToDisplay = this.text[i];
+
+                // Add classes for currently typed characters
+                if (i < this.inputValue.length) {
+                    if (this.inputValue[i] === this.text[i]) {
+                        className += ' correct';
+                    } else {
+                        className += ' incorrect';
+                        // Don't replace the character underneath the cursor, show original text
+                        charToDisplay = this.text[i];
+                    }
+                } else if (i === this.inputValue.length) {
+                    // Current position
+                    className += ' current';
+                    this.currentIndex = i;
+                }
+
+                // Add class for pace caret if active
+                if (this.paceCaretActive && i === this.paceCaretIndex) {
+                    className += ' pace-caret';
+                }
+
+                html += `<span class="${className}">${charToDisplay}</span>`;
+            }
+
+            textDisplay.innerHTML = html;
+        } else {
+            // Update only the changed elements to reduce flickering
+            for (let i = 0; i < this.text.length; i++) {
+                if (i < textDisplay.children.length) {
+                    const span = textDisplay.children[i];
+                    let className = 'char';
+
+                    // Add classes for currently typed characters
+                    if (i < this.inputValue.length) {
+                        if (this.inputValue[i] === this.text[i]) {
+                            className += ' correct';
+                        } else {
+                            className += ' incorrect';
+                        }
+                    } else if (i === this.inputValue.length) {
+                        // Current position
+                        className += ' current';
+                        this.currentIndex = i;
+                    }
+
+                    // Add class for pace caret if active
+                    if (this.paceCaretActive && i === this.paceCaretIndex) {
+                        className += ' pace-caret';
+                    }
+
+                    // Only update class if it changed
+                    if (span.className !== className) {
+                        span.className = className;
+                    }
+
+                    // Update character if it's an incorrect one
+                    if (i < this.inputValue.length && this.inputValue[i] !== this.text[i]) {
+                        span.textContent = this.text[i];
+                    }
+                }
+            }
         }
 
-        textDisplay.innerHTML = html;
         this.updateTimeDisplay();
-
     }
 
 }

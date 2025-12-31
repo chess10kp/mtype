@@ -1,0 +1,17 @@
+* TODO pace caret that keeps going at a specific speed
+  :PROPERTIES:
+  :ID: task-20251230192945
+  :TITLE: pace caret that keeps going at a specific speed
+  :CREATED: <2025-12-30 Tue 19:29>
+  :END:
+
+  
+
+* DONE use the json file for english , english1k and let the user toggle between the two
+  :PROPERTIES:
+  :ID: task-20251230193050
+  :TITLE: use the json file for english , english1k and let the user toggle between the two
+  :CREATED: <2025-12-30 Tue 19:30>
+  :END:
+
+  
