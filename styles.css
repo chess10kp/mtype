@@ -159,7 +159,6 @@ html::-webkit-scrollbar {
     background-color: var(--accent-primary); /* Yellow accent color as background for pace cursor */
     color: var(--bg-primary); /* Dark background as text color for contrast */
     transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease, opacity 0.15s ease;
-    animation: paceCursorBlink 1s infinite step-end;
 }
 
 @keyframes cursorBlink {
@@ -170,18 +169,6 @@ html::-webkit-scrollbar {
         opacity: 0.8;
     }
 }
-
-@keyframes paceCursorBlink {
-    0%, 100% {
-        opacity: 0.7;
-    }
-    50% {
-        opacity: 0.4;
-    }
-}
-
-
-
 
 #typing-input:focus {
     outline: none;
@@ -197,8 +184,8 @@ html::-webkit-scrollbar {
 .controls {
     display: flex;
     justify-content: center;
-    gap: 2rem;
-    margin-bottom: 2rem;
+    gap: 4rem;
+    margin: 0 2rem 3rem 2rem;
     flex-wrap: wrap;
 }
 
@@ -215,19 +202,69 @@ html::-webkit-scrollbar {
 
 .controls select,
 .controls input[type="number"] {
-    background: var(--ui-element-bg);
+    background: var(--bg-primary);
     border: 1px solid var(--text-secondary);
     color: var(--text-primary);
-    padding: 0.3rem 0.5rem;
-    border-radius: 3px;
+    padding: 0.75rem 0.5rem;
+    border-radius: 4px;
     font-family: inherit;
     font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s;
 }
 
+/* Style the number input spin buttons (arrows) */
+.controls input[type="number"]::-webkit-outer-spin-button,
+.controls input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.controls input[type="number"] {
+    -moz-appearance: textfield; /* For Firefox */
+}
+
+.controls select:hover,
+.controls input[type="number"]:hover {
+    background: var(--bg-primary);
+    border-color: var(--accent-primary);
+}
+
+.controls select:focus,
+.controls input[type="number"]:focus {
+    outline: none;
+    border-color: var(--accent-primary);
+}
+
+/* Custom checkbox styling */
 .controls input[type="checkbox"] {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
     width: 1.2rem;
     height: 1.2rem;
-    accent-color: var(--accent-primary);
+    background: var(--bg-primary);
+    border: 1px solid var(--text-secondary);
+    border-radius: 3px;
+    position: relative;
+    cursor: pointer;
+}
+
+.controls input[type="checkbox"]:checked {
+    background: var(--accent-primary);
+    border-color: var(--accent-primary);
+}
+
+.controls input[type="checkbox"]:checked::after {
+    content: '';
+    position: absolute;
+    left: 4px;
+    top: 1px;
+    width: 5px;
+    height: 10px;
+    border: solid var(--bg-primary);
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
 }
 
 /* Shortcuts */

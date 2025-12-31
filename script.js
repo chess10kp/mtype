@@ -32,6 +32,15 @@ class TypingTest {
         await this.generateText();
         this.setupEventListeners();
         this.updateDisplay();
+
+        // Automatically scroll to the top when initializing
+        const textDisplay = document.getElementById('text-display');
+        if (textDisplay) {
+            textDisplay.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        }
     }
 
     // Load language data with error handling
@@ -136,8 +145,8 @@ class TypingTest {
         return generatedWords.join(' ');
     }
 
-    // Create prefix sum array for modified weighted selection
-    createZipfWeightedPrefixSum(n) {
+    // Create prefix sum array for modified weighted selection with linear scaling
+    createZipfWeightedPrefixSumLinear(n) {
         // Use a method that reduces the dominance of very frequent words
         // This creates a more natural distribution with less repetition of words like "the"
         const weights = [];
@@ -356,6 +365,14 @@ class TypingTest {
 
 
     handleGlobalKeydown(e) {
+        // Prevent handling key events when focused on input elements
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') {
+            // Only allow Tab key to work from inputs (to restart)
+            if (e.key !== 'Tab') {
+                return;
+            }
+        }
+
         const key = e.key.toLowerCase();
 
         if (key === 'tab') {
@@ -426,6 +443,11 @@ class TypingTest {
         if (textDisplay.children.length === 0) {
             this.updateDisplay();
             return;
+        }
+
+        // Start the pace caret interval on the user's first key press
+        if (this.paceCaretActive && this.inputValue.length === 1 && !this.paceInterval) {
+            this.startPaceCaretInterval();
         }
 
         // Update only the changed elements to reduce flickering
@@ -616,13 +638,23 @@ class TypingTest {
             this.updateStats();
         }, 1000);
 
-        // Start pace caret if it was enabled before the test started
+        // Initialize pace caret if it was enabled before the test started
+        // The actual pace caret movement will start after the user types their first character
         if (document.getElementById('pace-toggle').checked) {
-            // Reset pace caret to start ahead of the user's current position
-            this.paceCaretIndex = 0; // Start from beginning initially
-            this.activatePaceCaret();
+            // Reset pace caret index but don't start the interval yet
+            this.paceCaretIndex = 0;
+            this.paceCaretActive = true;
+            // Don't start the interval yet - it will start on first key press
         }
 
+        // Automatically scroll to the top when starting a new test
+        const textDisplayForScroll = document.getElementById('text-display');
+        if (textDisplayForScroll) {
+            textDisplayForScroll.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        }
     }
 
     startTimer() {
@@ -747,6 +779,15 @@ class TypingTest {
         if (wasPaceActive) {
             this.activatePaceCaret();
         }
+
+        // Automatically scroll to the top when restarting a test
+        const textDisplay = document.getElementById('text-display');
+        if (textDisplay) {
+            textDisplay.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        }
     }
 
     removeResultsOverlay() {
@@ -772,6 +813,15 @@ class TypingTest {
 
     activatePaceCaret() {
         this.paceCaretActive = true;
+        // Don't start the interval yet - it will start on first key press
+        this.paceCaretIndex = 0;
+    }
+
+    startPaceCaretInterval() {
+        // Only start the interval if pace caret is active and we don't already have an interval
+        if (!this.paceCaretActive || this.paceInterval) {
+            return;
+        }
 
         // Calculate the interval based on WPM (words per minute)
         // 1 WPM = 5 chars per minute, so 60 WPM = 300 chars per minute = 5 chars per second
