@@ -414,9 +414,12 @@ class TypingTest {
             html += `<span class="${className}">${charToDisplay}</span>`;
         }
 
-        textDisplay.innerHTML = html;
+        // Only update the HTML if it has changed to avoid unnecessary re-renders
+        if (textDisplay.innerHTML !== html) {
+            textDisplay.innerHTML = html;
+        }
 
-        // Scroll to keep current character in view
+        // Scroll to keep current character in view with smooth scrolling
         this.scrollToCurrentChar();
     }
 
@@ -453,18 +456,30 @@ class TypingTest {
             const containerHeight = textDisplay.clientHeight;
             const scrollTop = textDisplay.scrollTop;
 
-            // Calculate the position of the last fully visible line
-            // We want to scroll early when reaching the beginning of the final visible line
-            const finalVisibleLineThreshold = scrollTop + containerHeight - (containerHeight / 3); // At 2/3 of the container height
+            // Calculate threshold to trigger scrolling earlier (when we're in the 2nd-to-last visible line)
+            // This will make the page scroll before reaching the last line
+            const scrollThreshold = scrollTop + containerHeight - (containerHeight / 2); // At half of the container height
 
-            // If the current character is approaching the end of the visible area, scroll to show next line
-            if (charTop > finalVisibleLineThreshold) {
-                // Scroll so that the current character is about 1/3 down the container
-                textDisplay.scrollTop = charTop - (containerHeight / 3);
+            // Check if the current character is approaching the bottom of the visible area
+            // and scroll before reaching the last line
+            if (charTop >= scrollThreshold) {
+                // Calculate the target scroll position to show the next line of text
+                const lineHeight = parseFloat(getComputedStyle(currentCharElement).lineHeight) ||
+                                  parseFloat(getComputedStyle(currentCharElement).fontSize) * 2; // Fallback to font-size * line-height ratio
+                const targetScrollTop = charTop - (containerHeight / 4); // Scroll to leave some space at the top
+
+                // Use smooth scrolling to move the view
+                textDisplay.scrollTo({
+                    top: targetScrollTop,
+                    behavior: 'smooth'
+                });
             }
             // If the current character is above the visible area, scroll up
             else if (charTop < scrollTop) {
-                textDisplay.scrollTop = charTop;
+                textDisplay.scrollTo({
+                    top: charTop,
+                    behavior: 'smooth'
+                });
             }
         }
     }
@@ -559,7 +574,7 @@ class TypingTest {
         }, 1000);
     }
 
-    endTest() {
+    endTest(options = {}) {
         this.isActive = false;
         this.endTime = Date.now();
 
@@ -574,6 +589,57 @@ class TypingTest {
 
         this.updateStats();
 
+        // Remove any existing results overlay before showing new one
+        this.removeResultsOverlay();
+
+        // Show final results overlay unless explicitly skipped
+        if (!options.skipOverlay) {
+            // Add final results overlay
+            this.showFinalResults();
+        }
+
+    }
+
+    showFinalResults() {
+        // Calculate final stats if not already calculated
+        if (this.startTime && this.endTime) {
+            const elapsed = (this.endTime - this.startTime) / 1000 / 60; // minutes
+            const typedChars = this.inputValue.length;
+
+            // Calculate WPM (words per minute)
+            const wordsTyped = typedChars / 5; // standard: 5 chars = 1 word
+            const finalWpm = Math.round(wordsTyped / elapsed);
+
+            // Calculate accuracy
+            const accuracy = typedChars > 0 ? Math.round(((typedChars - this.errors) / typedChars) * 100) : 100;
+
+            // Create results overlay
+            let resultsHTML = `
+                <div id="results-overlay" class="results-overlay">
+                    <div class="results-content">
+                        <h2 class="results-title">Test Complete!</h2>
+                        <div class="final-stats">
+                            <div class="final-stat">
+                                <div class="final-stat-value">${finalWpm}</div>
+                                <div class="final-stat-label">WPM</div>
+                            </div>
+                            <div class="final-stat">
+                                <div class="final-stat-value">${accuracy}%</div>
+                                <div class="final-stat-label">ACCURACY</div>
+                            </div>
+                            <div class="final-stat">
+                                <div class="final-stat-value">${this.errors}</div>
+                                <div class="final-stat-label">ERRORS</div>
+                            </div>
+                        </div>
+                        <div class="restart-instruction">Press Tab to restart</div>
+                    </div>
+                </div>
+            `;
+
+            // Add to container
+            document.querySelector('.container').insertAdjacentHTML('beforeend', resultsHTML);
+        }
     }
 
     isTestComplete() {
@@ -584,12 +650,19 @@ class TypingTest {
     }
 
     async restart() {
-        this.endTest();
+        this.endTest({ skipOverlay: true }); // Skip showing results overlay when restarting
         this.inputValue = '';
         await this.generateText();
         this.updateDisplay();
         this.remainingTime = this.timerDuration;
         this.updateTimeDisplay();
+    }
+
+    removeResultsOverlay() {
+        const overlay = document.getElementById('results-overlay');
+        if (overlay) {
+            overlay.remove();
+        }
     }
 
     setMode(mode) {
