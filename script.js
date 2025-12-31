@@ -409,6 +409,46 @@ class TypingTest {
             return;
         }
 
+        // Language selection shortcut
+        if ((e.ctrlKey || e.metaKey) && key === 'k') {
+            e.preventDefault();
+            this.cycleLanguage();
+            return;
+        }
+
+        // Settings shortcuts when not in active test
+        if (!this.isActive) {
+            // W key to adjust pace WPM
+            if (key === 'w') {
+                e.preventDefault();
+                // Increase WPM by 5
+                const paceWpmInput = document.getElementById('pace-wpm');
+                let wpm = parseInt(paceWpmInput.value);
+                wpm = Math.min(wpm + 5, 500);
+                paceWpmInput.value = wpm;
+                this.setPaceWpm(wpm);
+                return;
+            }
+
+            if (key === 'q') {
+                e.preventDefault();
+                // Decrease WPM by 5
+                const paceWpmInput = document.getElementById('pace-wpm');
+                let wpm = parseInt(paceWpmInput.value);
+                wpm = Math.max(wpm - 5, 10);
+                paceWpmInput.value = wpm;
+                this.setPaceWpm(wpm);
+                return;
+            }
+        }
+
+        // Ctrl+J to toggle pace caret (works regardless of test state)
+        if ((e.ctrlKey || e.metaKey) && key === 'j') {
+            e.preventDefault();
+            this.togglePaceCaret();
+            return;
+        }
+
         if (this.isActive) {
             if (key === 'backspace') {
                 e.preventDefault();
@@ -804,10 +844,15 @@ class TypingTest {
 
     // Pace caret methods
     togglePaceCaret() {
+        const paceToggle = document.getElementById('pace-toggle');
+        if (!paceToggle) return;
+
         if (this.paceCaretActive) {
             this.deactivatePaceCaret();
+            paceToggle.checked = false;
         } else {
             this.activatePaceCaret();
+            paceToggle.checked = true;
         }
     }
 
@@ -815,6 +860,7 @@ class TypingTest {
         this.paceCaretActive = true;
         // Don't start the interval yet - it will start on first key press
         this.paceCaretIndex = 0;
+        this.updateDisplay(); // Update display to show pace caret
     }
 
     startPaceCaretInterval() {
@@ -843,6 +889,29 @@ class TypingTest {
         if (this.paceInterval) {
             clearInterval(this.paceInterval);
             this.paceInterval = null;
+        }
+        this.updateDisplay(); // Update display to remove pace caret
+    }
+
+    selectLanguage(language) {
+        this.selectedLanguage = language;
+        // Update the select element to reflect the change
+        const languageSelect = document.getElementById('language-select');
+        if (languageSelect) {
+            languageSelect.value = language;
+        }
+        this.restart();
+    }
+
+    cycleLanguage() {
+        const languageSelect = document.getElementById('language-select');
+        if (languageSelect) {
+            const currentIndex = languageSelect.selectedIndex;
+            const nextIndex = (currentIndex + 1) % languageSelect.options.length;
+            languageSelect.selectedIndex = nextIndex;
+            const selectedLanguage = languageSelect.options[nextIndex].value;
+            this.selectedLanguage = selectedLanguage;
+            this.restart();
         }
     }
 

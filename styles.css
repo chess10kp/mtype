@@ -184,20 +184,51 @@ html::-webkit-scrollbar {
 .controls {
     display: flex;
     justify-content: center;
-    gap: 4rem;
+    gap: 2rem;
     margin: 0 2rem 3rem 2rem;
     flex-wrap: wrap;
 }
 
-.controls > div {
+.setting-group {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+    background: var(--ui-element-bg);
+    padding: 1.5rem;
+    border-radius: 8px;
+    border: 1px solid var(--border-base);
+    min-width: 200px;
+    transition: all 0.3s ease;
+}
+
+.setting-group:hover {
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 10px rgba(226, 183, 20, 0.2);
+}
+
+.setting-group label {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.3rem;
+    display: block;
+}
+
+.shortcut-info {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin-top: 0.3rem;
+    padding: 0.2rem 0.4rem;
+    background: var(--bg-primary);
+    border-radius: 3px;
+    display: inline-block;
+}
+
+.setting-label {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    color: var(--text-secondary);
-}
-
-.controls label {
-    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
 }
 
 .controls select,
@@ -205,12 +236,35 @@ html::-webkit-scrollbar {
     background: var(--bg-primary);
     border: 1px solid var(--text-secondary);
     color: var(--text-primary);
-    padding: 0.75rem 0.5rem;
+    padding: 0.5rem 0.75rem;
     border-radius: 4px;
     font-family: inherit;
     font-size: 0.9rem;
     cursor: pointer;
     transition: all 0.2s;
+    width: 100%;
+}
+
+.pace-options {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+}
+
+.pace-options input[type="number"],
+.pace-options span {
+    margin: 0;
+    flex: 1;
+}
+
+.pace-options span {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    padding: 0.5rem;
+    background: var(--bg-primary);
+    border-radius: 4px;
+    text-align: center;
 }
 
 /* Style the number input spin buttons (arrows) */
@@ -237,7 +291,7 @@ html::-webkit-scrollbar {
 }
 
 /* Custom checkbox styling */
-.controls input[type="checkbox"] {
+.setting-label input[type="checkbox"] {
     -webkit-appearance: none;
     -moz-appearance: none;
     appearance: none;
@@ -248,14 +302,15 @@ html::-webkit-scrollbar {
     border-radius: 3px;
     position: relative;
     cursor: pointer;
+    margin: 0;
 }
 
-.controls input[type="checkbox"]:checked {
+.setting-label input[type="checkbox"]:checked {
     background: var(--accent-primary);
     border-color: var(--accent-primary);
 }
 
-.controls input[type="checkbox"]:checked::after {
+.setting-label input[type="checkbox"]:checked::after {
     content: '';
     position: absolute;
     left: 4px;
