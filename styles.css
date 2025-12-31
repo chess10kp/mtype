@@ -274,7 +274,17 @@ html::-webkit-scrollbar {
     margin: 0;
 }
 
+.settings-content input[type="number"]::-webkit-outer-spin-button,
+.settings-content input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
 .controls input[type="number"] {
+    -moz-appearance: textfield; /* For Firefox */
+}
+
+.settings-content input[type="number"] {
     -moz-appearance: textfield; /* For Firefox */
 }
 
@@ -507,6 +517,94 @@ kbd {
     color: var(--text-secondary);
     font-size: 1.1rem;
     margin-top: 1rem;
+}
+
+/* Settings overlay */
+.settings-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(14, 20, 25, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1001;
+    animation: fadeIn 0.3s ease;
+    font-weight: 500;
+}
+
+select, input {
+    background-color: var(--ui-element-bg);
+    color: var(--text-primary);
+    border: 1px solid var(--border-base);
+    padding: 0.5rem;
+}
+
+.settings-menu {
+    background: var(--ui-element-bg);
+    border-radius: 8px;
+    border: 1px solid var(--border-base);
+    width: 90%;
+    max-width: 500px;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+}
+
+.settings-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--border-base);
+}
+
+.settings-header h2 {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: 1.5rem;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    color: var(--text-primary);
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0.25rem;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.close-btn:hover {
+    background: var(--ui-element-hover);
+}
+
+.settings-content {
+    padding: 1.5rem;
+}
+
+.settings-content .setting-group {
+    margin-bottom: 1.5rem;
+    background: var(--bg-primary);
+    padding: 1rem;
+    border-radius: 6px;
+    border: 1px solid var(--border-base);
+}
+
+.settings-content .setting-group:last-child {
+    margin-bottom: 0;
+}
+
+.hidden {
+    display: none !important;
 }
 
 @keyframes fadeIn {

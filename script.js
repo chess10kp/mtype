@@ -334,6 +334,8 @@ class TypingTest {
         const languageSelect = document.getElementById('language-select');
         const paceToggle = document.getElementById('pace-toggle');
         const paceWpmInput = document.getElementById('pace-wpm');
+        const settingsOverlay = document.getElementById('settings-overlay');
+        const closeSettingsBtn = document.getElementById('close-settings');
 
         if (languageSelect) {
             languageSelect.addEventListener('change', (e) => {
@@ -357,6 +359,22 @@ class TypingTest {
                 const wpm = parseInt(e.target.value);
                 if (!isNaN(wpm) && wpm >= 10 && wpm <= 500) {
                     this.setPaceWpm(wpm);
+                }
+            });
+        }
+
+        // Add event listener for closing settings
+        if (closeSettingsBtn) {
+            closeSettingsBtn.addEventListener('click', () => {
+                this.hideSettings();
+            });
+        }
+
+        // Add click listener to close settings when clicking outside
+        if (settingsOverlay) {
+            settingsOverlay.addEventListener('click', (e) => {
+                if (e.target === settingsOverlay) {
+                    this.hideSettings();
                 }
             });
         }
@@ -442,10 +460,20 @@ class TypingTest {
             }
         }
 
-        // Ctrl+J to toggle pace caret (works regardless of test state)
+        // Ctrl+J to toggle settings menu
         if ((e.ctrlKey || e.metaKey) && key === 'j') {
             e.preventDefault();
-            this.togglePaceCaret();
+
+            // Check if settings menu is currently visible
+            const settingsOverlay = document.getElementById('settings-overlay');
+            if (settingsOverlay && !settingsOverlay.classList.contains('hidden')) {
+                // If visible, hide it
+                this.hideSettings();
+            } else {
+                // If not visible, show it
+
+                this.showSettings();
+            }
             return;
         }
 
@@ -998,6 +1026,20 @@ class TypingTest {
         }
 
         this.updateTimeDisplay();
+    }
+
+    showSettings() {
+        const settingsOverlay = document.getElementById('settings-overlay');
+        if (settingsOverlay) {
+            settingsOverlay.classList.remove('hidden');
+        }
+    }
+
+    hideSettings() {
+        const settingsOverlay = document.getElementById('settings-overlay');
+        if (settingsOverlay) {
+            settingsOverlay.classList.add('hidden');
+        }
     }
 
 }

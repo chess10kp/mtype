@@ -8,31 +8,6 @@
 </head>
 <body>
     <div class="container">
-        <div class="controls">
-            <div class="setting-group">
-                <label for="language-select">Language:</label>
-                <select id="language-select">
-                    <option value="english">English</option>
-                    <option value="english_1k">English 1k</option>
-                </select>
-                <div class="shortcut-info">[Ctrl+K] Cycle Language</div>
-            </div>
-
-            <div class="setting-group">
-                <div class="setting-label">
-                    <label for="pace-toggle">Pace Caret:</label>
-                    <input type="checkbox" id="pace-toggle">
-                </div>
-                <div class="pace-options">
-                    <input type="number" id="pace-wpm" value="60" min="10" max="500" step="5">
-                    <span>WPM</span>
-                </div>
-                <div class="shortcut-info">[Ctrl+J] Toggle Pace</div>
-                <div class="shortcut-info">[W] +5 WPM</div>
-                <div class="shortcut-info">[Q] -5 WPM</div>
-            </div>
-        </div>
-
         <div class="typing-area">
             <div class="text-display" id="text-display">
             </div>
@@ -46,7 +21,36 @@
                 <span class="stat-value" id="accuracy">100</span>
             </div>
             <div class="stat">
-                <span class="stat-value" id="time-words-value">60s</span>
+                <span class="stat-value" id="time-words-value">30</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="settings-overlay" class="settings-overlay hidden">
+        <div class="settings-menu">
+            <div class="settings-content">
+                <div class="setting-group">
+                    <label for="language-select">Language:</label>
+                    <select id="language-select">
+                        <option value="english">English</option>
+                        <option value="english_1k">English 1k</option>
+                    </select>
+                    <div class="shortcut-info">[Ctrl+K] Cycle Language</div>
+                </div>
+
+                <div class="setting-group">
+                    <div class="setting-label">
+                        <label for="pace-toggle">Pace Caret:</label>
+                        <input type="checkbox" id="pace-toggle">
+                    </div>
+                    <div class="pace-options">
+                        <input type="number" id="pace-wpm" value="60" min="10" max="500" step="5">
+                        <span>WPM</span>
+                    </div>
+                    <div class="shortcut-info">[Ctrl+J] Toggle Pace / Open Settings</div>
+                    <div class="shortcut-info">[W] +5 WPM</div>
+                    <div class="shortcut-info">[Q] -5 WPM</div>
+                </div>
             </div>
         </div>
     </div>
